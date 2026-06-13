@@ -1,16 +1,13 @@
-FROM php:8.2-cli
+FROM php:8.3-fpm
 
 WORKDIR /var/www
 
 # Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    zip
+    git curl unzip zip libzip-dev libonig-dev libxml2-dev
 
-# Instalar extensiones PHP
-RUN docker-php-ext-install pdo pdo_mysql zip
+# Extensiones PHP completas para Laravel
+RUN docker-php-ext-install pdo pdo_mysql mbstring zip xml ctype
 
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -18,13 +15,13 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copiar proyecto
 COPY . .
 
-# Instalar dependencias Laravel
-RUN composer install --no-dev --optimize-autoloader
+# Instalar dependencias (modo seguro)
+RUN composer install --no-interaction --no-progress
 
-# Generar key
-RUN php artisan key:generate
+# Permisos Laravel
+RUN chmod -R 775 storage bootstrap/cache
 
-# Exponer puerto
+# Puerto Render
 EXPOSE 10000
 
 # Iniciar servidor
